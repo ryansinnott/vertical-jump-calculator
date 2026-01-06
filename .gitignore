@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Build output
+www/
+
 # IDE
 .vscode/
 .idea/
@@ -11,3 +14,12 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Native platforms (optional - uncomment to exclude from repo)
+# android/
+# ios/
+
+# Capacitor
+android/app/build/
+ios/App/Pods/
+ios/App/App.xcworkspace/xcuserdata/

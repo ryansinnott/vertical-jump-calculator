@@ -1,0 +1,11 @@
+{
+  "appId": "com.jumpcalc.app",
+  "appName": "Vertical Jump Calculator",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic"
+  }
+}

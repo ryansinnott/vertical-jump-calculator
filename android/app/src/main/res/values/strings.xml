@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Vertical Jump Calculator</string>
+    <string name="title_activity_main">Vertical Jump Calculator</string>
+    <string name="package_name">com.jumpcalc.app</string>
+    <string name="custom_url_scheme">com.jumpcalc.app</string>
+</resources>

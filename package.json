@@ -1,0 +1,36 @@
+{
+  "name": "verticle-jump-calculator",
+  "version": "1.0.0",
+  "description": "A mobile web app that measures your vertical jump height from video using physics-based calculation.",
+  "main": "app.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:icons": "node scripts/generate-icons.js",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:android": "npm run build && npx cap sync android && npx cap open android",
+    "cap:ios": "npm run build && npx cap sync ios && npx cap open ios",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryansinnott/vertical-jump-calculator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ryansinnott/vertical-jump-calculator/issues"
+  },
+  "homepage": "https://github.com/ryansinnott/vertical-jump-calculator#readme",
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "tslib": "^2.8.1"
+  }
+}

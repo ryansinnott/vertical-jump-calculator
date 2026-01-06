@@ -51,11 +51,19 @@ You simply mark the takeoff frame (when heels leave the ground) and peak frame (
 ## Tech Stack
 
 - Vanilla HTML/CSS/JavaScript
-- No external dependencies
+- Progressive Web App (PWA) with offline support
+- Capacitor for native iOS/Android builds
 - Mobile-first responsive design
 - Dark theme UI
 
-## Running Locally
+## Installation
+
+### As a PWA (Recommended)
+1. Visit the app URL in Chrome/Safari on your phone
+2. Tap "Add to Home Screen"
+3. The app will work offline like a native app!
+
+### Running Locally
 
 Simply open `index.html` in a browser, or start a local server:
 
@@ -70,6 +78,31 @@ python -m http.server 8000
 ```
 
 Then open `http://localhost:8000` on your device.
+
+### Building Native Apps
+
+First, install dependencies:
+
+```bash
+npm install
+```
+
+**For Android:**
+```bash
+npm run cap:android
+```
+This opens Android Studio. From there you can build and run on a device/emulator.
+
+**For iOS (requires Mac):**
+```bash
+npm run cap:ios
+```
+This opens Xcode. From there you can build and run on a device/simulator.
+
+**Sync changes to native projects:**
+```bash
+npm run cap:sync
+```
 
 ## Browser Support
 

@@ -1,45 +1,45 @@
 /**
- * Vertical Jump Calculator - Main App Logic
+ * Vertical Jump Calculator
+ * Calculates jump height from user-selected takeoff and peak frames
+ * Uses physics formula: h = ½ × g × t²
  */
 
 class VerticalJumpApp {
     constructor() {
+        // Constants
+        this.GRAVITY = 9.81; // m/s²
+        this.FRAME_STEP = 1 / 30; // Assume ~30fps, step by ~1 frame
+
         // State
         this.currentScreen = 'welcome';
-        this.userHeightCm = null;
-        this.videoBlob = null;
-        this.mediaStream = null;
-        this.mediaRecorder = null;
-        this.recordedChunks = [];
-        this.recordingTimer = null;
-        this.recordingSeconds = 0;
-        this.countdownTimer = null;
+        this.videoFile = null;
+        this.videoDuration = 0;
+        this.takeoffTime = null;
+        this.peakTime = null;
+        this.isPlaying = false;
 
         // DOM Elements
         this.screens = {
             welcome: document.getElementById('screen-welcome'),
-            instructions: document.getElementById('screen-instructions'),
-            recording: document.getElementById('screen-recording'),
             upload: document.getElementById('screen-upload'),
-            analyzing: document.getElementById('screen-analyzing'),
-            results: document.getElementById('screen-results'),
-            error: document.getElementById('screen-error')
+            selector: document.getElementById('screen-selector'),
+            results: document.getElementById('screen-results')
         };
+
+        this.video = document.getElementById('video-player');
+        this.scrubber = document.getElementById('video-scrubber');
 
         // Initialize
         this.bindEvents();
-        this.initializeHeightInputs();
     }
 
     // ==================== Screen Navigation ====================
 
     showScreen(screenName) {
-        // Hide all screens
         Object.values(this.screens).forEach(screen => {
             screen.classList.remove('active');
         });
 
-        // Show target screen
         if (this.screens[screenName]) {
             this.screens[screenName].classList.add('active');
             this.currentScreen = screenName;
@@ -49,364 +49,251 @@ class VerticalJumpApp {
     // ==================== Event Bindings ====================
 
     bindEvents() {
-        // Height input - unit toggle
-        document.querySelectorAll('.unit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.handleUnitToggle(e));
+        // Welcome screen
+        document.getElementById('btn-start').addEventListener('click', () => {
+            this.showScreen('upload');
         });
 
-        // Height inputs - validation
-        document.getElementById('height-cm').addEventListener('input', () => this.validateHeightInput());
-        document.getElementById('height-ft').addEventListener('input', () => this.validateHeightInput());
-        document.getElementById('height-in').addEventListener('input', () => this.validateHeightInput());
+        // Upload screen
+        const uploadArea = document.getElementById('upload-area');
+        const videoInput = document.getElementById('video-upload');
 
-        // Continue button
-        document.getElementById('btn-continue').addEventListener('click', () => this.handleContinue());
+        uploadArea.addEventListener('click', () => videoInput.click());
 
-        // Record button
-        document.getElementById('btn-record').addEventListener('click', () => this.startRecordingFlow());
-
-        // Upload button
-        document.getElementById('btn-upload').addEventListener('click', () => this.handleUploadClick());
-
-        // Video file input
-        document.getElementById('video-upload').addEventListener('change', (e) => this.handleFileSelect(e));
-
-        // Recording controls
-        document.getElementById('btn-start-recording').addEventListener('click', () => this.toggleRecording());
-        document.getElementById('btn-cancel-recording').addEventListener('click', () => this.cancelRecording());
-
-        // Upload preview controls
-        document.getElementById('btn-analyze-upload').addEventListener('click', () => this.analyzeVideo());
-        document.getElementById('btn-reselect').addEventListener('click', () => this.handleUploadClick());
-
-        // Results
-        document.getElementById('btn-try-again').addEventListener('click', () => this.resetApp());
-
-        // Error
-        document.getElementById('btn-error-retry').addEventListener('click', () => this.resetApp());
-    }
-
-    // ==================== Height Input ====================
-
-    initializeHeightInputs() {
-        // Set default focus
-        document.getElementById('height-cm').focus();
-    }
-
-    handleUnitToggle(e) {
-        const unit = e.target.dataset.unit;
-
-        // Update button states
-        document.querySelectorAll('.unit-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.unit === unit);
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
         });
 
-        // Show/hide input groups
-        document.getElementById('height-input-cm').classList.toggle('hidden', unit !== 'cm');
-        document.getElementById('height-input-imperial').classList.toggle('hidden', unit !== 'imperial');
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
 
-        // Focus appropriate input
-        if (unit === 'cm') {
-            document.getElementById('height-cm').focus();
-        } else {
-            document.getElementById('height-ft').focus();
-        }
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) {
+                this.handleVideoSelect(file);
+            }
+        });
 
-        this.validateHeightInput();
-    }
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                this.handleVideoSelect(file);
+            }
+        });
 
-    validateHeightInput() {
-        const isCm = document.querySelector('.unit-btn.active').dataset.unit === 'cm';
-        let isValid = false;
+        // Video player events
+        this.video.addEventListener('loadedmetadata', () => {
+            this.videoDuration = this.video.duration;
+            this.scrubber.max = Math.floor(this.video.duration * 1000);
+            this.updateTimeDisplay();
+        });
 
-        if (isCm) {
-            const cm = parseInt(document.getElementById('height-cm').value);
-            isValid = cm >= 100 && cm <= 250;
-        } else {
-            const ft = parseInt(document.getElementById('height-ft').value);
-            const inches = parseInt(document.getElementById('height-in').value) || 0;
-            isValid = ft >= 3 && ft <= 8 && inches >= 0 && inches <= 11;
-        }
+        this.video.addEventListener('timeupdate', () => {
+            if (!this.scrubber.dataset.dragging) {
+                this.scrubber.value = Math.floor(this.video.currentTime * 1000);
+            }
+            this.updateTimeDisplay();
+        });
 
-        document.getElementById('btn-continue').disabled = !isValid;
-        return isValid;
-    }
+        this.video.addEventListener('play', () => {
+            this.isPlaying = true;
+            document.getElementById('btn-play-pause').classList.add('playing');
+        });
 
-    getHeightInCm() {
-        const isCm = document.querySelector('.unit-btn.active').dataset.unit === 'cm';
+        this.video.addEventListener('pause', () => {
+            this.isPlaying = false;
+            document.getElementById('btn-play-pause').classList.remove('playing');
+        });
 
-        if (isCm) {
-            return parseInt(document.getElementById('height-cm').value);
-        } else {
-            const ft = parseInt(document.getElementById('height-ft').value);
-            const inches = parseInt(document.getElementById('height-in').value) || 0;
-            return Math.round((ft * 12 + inches) * 2.54);
-        }
-    }
+        this.video.addEventListener('ended', () => {
+            this.isPlaying = false;
+            document.getElementById('btn-play-pause').classList.remove('playing');
+        });
 
-    handleContinue() {
-        if (this.validateHeightInput()) {
-            this.userHeightCm = this.getHeightInCm();
-            this.showScreen('instructions');
-        }
-    }
+        // Scrubber events
+        this.scrubber.addEventListener('input', () => {
+            this.scrubber.dataset.dragging = 'true';
+            this.video.currentTime = this.scrubber.value / 1000;
+            this.updateTimeDisplay();
+        });
 
-    // ==================== Recording Flow ====================
+        this.scrubber.addEventListener('change', () => {
+            delete this.scrubber.dataset.dragging;
+        });
 
-    async startRecordingFlow() {
-        this.showScreen('recording');
-        document.getElementById('recording-status').textContent = 'Preparing camera...';
+        // Frame navigation buttons
+        document.getElementById('btn-prev-frame').addEventListener('click', () => {
+            this.stepFrame(-1);
+        });
 
-        try {
-            // Request camera access
-            this.mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: 'environment', // Prefer rear camera
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                },
-                audio: false
-            });
+        document.getElementById('btn-next-frame').addEventListener('click', () => {
+            this.stepFrame(1);
+        });
 
-            // Set up preview
-            const preview = document.getElementById('camera-preview');
-            preview.srcObject = this.mediaStream;
-            await preview.play();
+        document.getElementById('btn-play-pause').addEventListener('click', () => {
+            this.togglePlayPause();
+        });
 
-            // Show recording button
-            document.getElementById('btn-start-recording').classList.remove('hidden');
-            document.getElementById('recording-status').textContent = 'Tap to start recording';
+        // Mark buttons
+        document.getElementById('btn-mark-takeoff').addEventListener('click', () => {
+            this.markTakeoff();
+        });
 
-        } catch (err) {
-            console.error('Camera access error:', err);
-            this.showError('Could not access camera. Please check permissions and try again.');
-        }
-    }
+        document.getElementById('btn-mark-peak').addEventListener('click', () => {
+            this.markPeak();
+        });
 
-    async toggleRecording() {
-        const btn = document.getElementById('btn-start-recording');
+        // Calculate button
+        document.getElementById('btn-calculate').addEventListener('click', () => {
+            this.calculateAndShowResults();
+        });
 
-        if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
-            // Start countdown
-            await this.startCountdown();
-            this.startRecording();
-            btn.classList.add('recording');
-        } else {
-            this.stopRecording();
-            btn.classList.remove('recording');
-        }
-    }
-
-    startCountdown() {
-        return new Promise((resolve) => {
-            const overlay = document.getElementById('countdown-overlay');
-            const numberEl = overlay.querySelector('.countdown-number');
-            overlay.classList.remove('hidden');
-            document.getElementById('btn-start-recording').classList.add('hidden');
-
-            let count = 3;
-            numberEl.textContent = count;
-
-            this.countdownTimer = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    numberEl.textContent = count;
-                } else {
-                    clearInterval(this.countdownTimer);
-                    overlay.classList.add('hidden');
-                    document.getElementById('recording-status').textContent = 'Stand still, then JUMP!';
-                    resolve();
-                }
-            }, 1000);
+        // Try again button
+        document.getElementById('btn-try-again').addEventListener('click', () => {
+            this.reset();
         });
     }
 
-    startRecording() {
-        this.recordedChunks = [];
+    // ==================== Video Handling ====================
 
-        // Determine supported MIME type
-        const mimeTypes = [
-            'video/webm;codecs=vp9',
-            'video/webm;codecs=vp8',
-            'video/webm',
-            'video/mp4'
-        ];
+    handleVideoSelect(file) {
+        this.videoFile = file;
+        this.video.src = URL.createObjectURL(file);
+        this.video.load();
 
-        let selectedMimeType = '';
-        for (const mimeType of mimeTypes) {
-            if (MediaRecorder.isTypeSupported(mimeType)) {
-                selectedMimeType = mimeType;
-                break;
+        // Reset marks
+        this.takeoffTime = null;
+        this.peakTime = null;
+        this.updateMarkerDisplays();
+        this.updateCalculateButton();
+
+        this.showScreen('selector');
+    }
+
+    updateTimeDisplay() {
+        const time = this.video.currentTime;
+        document.getElementById('current-time').textContent = time.toFixed(3);
+    }
+
+    stepFrame(direction) {
+        if (this.isPlaying) {
+            this.video.pause();
+        }
+
+        const newTime = this.video.currentTime + (direction * this.FRAME_STEP);
+        this.video.currentTime = Math.max(0, Math.min(newTime, this.videoDuration));
+    }
+
+    togglePlayPause() {
+        if (this.isPlaying) {
+            this.video.pause();
+        } else {
+            this.video.play();
+        }
+    }
+
+    // ==================== Frame Marking ====================
+
+    markTakeoff() {
+        this.takeoffTime = this.video.currentTime;
+
+        // Update button state
+        document.getElementById('btn-mark-takeoff').classList.add('active');
+
+        // Update marker on scrubber
+        const marker = document.getElementById('takeoff-marker');
+        const percent = (this.takeoffTime / this.videoDuration) * 100;
+        marker.style.left = `${percent}%`;
+        marker.classList.remove('hidden');
+
+        this.updateMarkerDisplays();
+        this.updateInstructions();
+        this.updateCalculateButton();
+    }
+
+    markPeak() {
+        this.peakTime = this.video.currentTime;
+
+        // Update button state
+        document.getElementById('btn-mark-peak').classList.add('active');
+
+        // Update marker on scrubber
+        const marker = document.getElementById('peak-marker');
+        const percent = (this.peakTime / this.videoDuration) * 100;
+        marker.style.left = `${percent}%`;
+        marker.classList.remove('hidden');
+
+        this.updateMarkerDisplays();
+        this.updateInstructions();
+        this.updateCalculateButton();
+    }
+
+    updateMarkerDisplays() {
+        const takeoffValue = document.getElementById('takeoff-time-value');
+        const peakValue = document.getElementById('peak-time-value');
+
+        takeoffValue.textContent = this.takeoffTime !== null
+            ? `${this.takeoffTime.toFixed(3)}s`
+            : 'Not set';
+
+        peakValue.textContent = this.peakTime !== null
+            ? `${this.peakTime.toFixed(3)}s`
+            : 'Not set';
+    }
+
+    updateInstructions() {
+        const instructionEl = document.getElementById('instruction-text');
+
+        if (this.takeoffTime === null) {
+            instructionEl.textContent = 'Scrub to the frame where your heels leave the ground, then tap "Mark Takeoff"';
+        } else if (this.peakTime === null) {
+            instructionEl.textContent = 'Now scrub to the highest point of your jump, then tap "Mark Peak"';
+        } else {
+            const airTime = this.peakTime - this.takeoffTime;
+            if (airTime <= 0) {
+                instructionEl.textContent = '⚠️ Peak must be after takeoff. Please re-mark the frames.';
+            } else {
+                instructionEl.textContent = `✓ Ready to calculate! Air time to peak: ${airTime.toFixed(3)}s`;
             }
         }
-
-        try {
-            this.mediaRecorder = new MediaRecorder(this.mediaStream, {
-                mimeType: selectedMimeType || undefined
-            });
-
-            this.mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    this.recordedChunks.push(e.data);
-                }
-            };
-
-            this.mediaRecorder.onstop = () => {
-                this.handleRecordingComplete();
-            };
-
-            this.mediaRecorder.start(100); // Collect data every 100ms
-
-            // Show recording indicator
-            document.getElementById('recording-indicator').classList.remove('hidden');
-            this.startRecordingTimer();
-
-            // Auto-stop after 5 seconds
-            setTimeout(() => {
-                if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-                    this.stopRecording();
-                }
-            }, 5000);
-
-        } catch (err) {
-            console.error('Recording error:', err);
-            this.showError('Could not start recording. Please try again.');
-        }
     }
 
-    startRecordingTimer() {
-        this.recordingSeconds = 0;
-        const timerEl = document.getElementById('rec-timer');
-        timerEl.textContent = '0:00';
-
-        this.recordingTimer = setInterval(() => {
-            this.recordingSeconds++;
-            const secs = this.recordingSeconds % 60;
-            timerEl.textContent = `0:${secs.toString().padStart(2, '0')}`;
-        }, 1000);
+    updateCalculateButton() {
+        const btn = document.getElementById('btn-calculate');
+        const canCalculate = this.takeoffTime !== null &&
+                            this.peakTime !== null &&
+                            this.peakTime > this.takeoffTime;
+        btn.disabled = !canCalculate;
     }
 
-    stopRecording() {
-        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-            this.mediaRecorder.stop();
-        }
+    // ==================== Calculation ====================
 
-        // Stop timer
-        if (this.recordingTimer) {
-            clearInterval(this.recordingTimer);
-            this.recordingTimer = null;
-        }
-
-        // Hide recording indicator
-        document.getElementById('recording-indicator').classList.add('hidden');
+    calculateJumpHeight(timeToApex) {
+        // Physics formula: h = ½ × g × t²
+        // Where t is time from takeoff to peak (apex)
+        const heightMeters = 0.5 * this.GRAVITY * Math.pow(timeToApex, 2);
+        const heightCm = heightMeters * 100;
+        return heightCm;
     }
 
-    handleRecordingComplete() {
-        // Create blob from recorded chunks
-        const mimeType = this.mediaRecorder.mimeType || 'video/webm';
-        this.videoBlob = new Blob(this.recordedChunks, { type: mimeType });
+    calculateAndShowResults() {
+        const airTime = this.peakTime - this.takeoffTime;
+        const heightCm = this.calculateJumpHeight(airTime);
 
-        // Stop camera stream
-        this.stopCameraStream();
-
-        // Proceed to analysis
-        this.analyzeVideo();
-    }
-
-    cancelRecording() {
-        // Stop any ongoing countdown
-        if (this.countdownTimer) {
-            clearInterval(this.countdownTimer);
-        }
-
-        // Stop recording if active
-        this.stopRecording();
-
-        // Stop camera stream
-        this.stopCameraStream();
-
-        // Go back to instructions
-        this.showScreen('instructions');
-    }
-
-    stopCameraStream() {
-        if (this.mediaStream) {
-            this.mediaStream.getTracks().forEach(track => track.stop());
-            this.mediaStream = null;
-        }
-    }
-
-    // ==================== Upload Flow ====================
-
-    handleUploadClick() {
-        document.getElementById('video-upload').click();
-    }
-
-    handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        // Validate file type
-        if (!file.type.startsWith('video/')) {
-            this.showError('Please select a video file.');
-            return;
-        }
-
-        // Create blob and show preview
-        this.videoBlob = file;
-        const preview = document.getElementById('upload-preview');
-        preview.src = URL.createObjectURL(file);
-
-        this.showScreen('upload');
-
-        // Reset file input for future selections
-        e.target.value = '';
-    }
-
-    // ==================== Analysis ====================
-
-    async analyzeVideo() {
-        this.showScreen('analyzing');
-        document.getElementById('analysis-status').textContent = 'Loading AI model...';
-
-        try {
-            // Create video element for analysis
-            const video = document.createElement('video');
-            video.src = URL.createObjectURL(this.videoBlob);
-            video.playsInline = true;
-            video.muted = true;
-
-            // Wait for video to load metadata
-            await new Promise((resolve, reject) => {
-                video.onloadedmetadata = resolve;
-                video.onerror = reject;
-                video.load();
-            });
-
-            document.getElementById('analysis-status').textContent = 'Analyzing pose data...';
-
-            // Analyze with pose detector
-            const jumpHeight = await window.poseAnalyzer.analyzeJump(video, this.userHeightCm, (progress) => {
-                document.getElementById('analysis-status').textContent = `Processing frame ${progress}%`;
-            });
-
-            // Show results
-            this.showResults(jumpHeight);
-
-        } catch (err) {
-            console.error('Analysis error:', err);
-            // Use specific error message if available, otherwise generic
-            const message = err.message || 'Could not analyze the video. Make sure your full body is visible and try again.';
-            this.showError(message);
-        }
+        this.showResults(heightCm, airTime);
     }
 
     // ==================== Results ====================
 
-    showResults(heightCm) {
+    showResults(heightCm, airTime) {
         // Update height display
         document.getElementById('result-cm').textContent = Math.round(heightCm);
         document.getElementById('result-inches').textContent = (heightCm / 2.54).toFixed(1);
+        document.getElementById('result-airtime').textContent = `${airTime.toFixed(3)}s`;
 
         // Determine category
         const { category, label, context } = this.getJumpCategory(heightCm);
@@ -460,28 +347,30 @@ class VerticalJumpApp {
         }
     }
 
-    // ==================== Error Handling ====================
-
-    showError(message) {
-        document.getElementById('error-message').textContent = message;
-        this.showScreen('error');
-    }
-
     // ==================== Reset ====================
 
-    resetApp() {
-        // Clean up
-        this.stopCameraStream();
-        this.videoBlob = null;
-        this.recordedChunks = [];
+    reset() {
+        // Reset state
+        this.takeoffTime = null;
+        this.peakTime = null;
 
         // Reset UI
-        document.getElementById('btn-start-recording').classList.remove('hidden', 'recording');
-        document.getElementById('countdown-overlay').classList.add('hidden');
-        document.getElementById('recording-indicator').classList.add('hidden');
+        document.getElementById('btn-mark-takeoff').classList.remove('active');
+        document.getElementById('btn-mark-peak').classList.remove('active');
+        document.getElementById('takeoff-marker').classList.add('hidden');
+        document.getElementById('peak-marker').classList.add('hidden');
 
-        // Go back to instructions (keep height setting)
-        this.showScreen('instructions');
+        this.updateMarkerDisplays();
+        this.updateInstructions();
+        this.updateCalculateButton();
+
+        // Go back to selector if we have a video, otherwise upload
+        if (this.videoFile) {
+            this.video.currentTime = 0;
+            this.showScreen('selector');
+        } else {
+            this.showScreen('upload');
+        }
     }
 }
 

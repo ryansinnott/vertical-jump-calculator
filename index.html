@@ -11,7 +11,7 @@
 </head>
 <body>
     <div id="app">
-        <!-- Screen 1: Welcome & Height Input -->
+        <!-- Screen 1: Welcome -->
         <div id="screen-welcome" class="screen active">
             <div class="screen-content">
                 <div class="logo">
@@ -22,170 +22,132 @@
                         </svg>
                     </div>
                     <h1>Vertical Jump</h1>
-                    <p class="subtitle">Measure your jump height with AI</p>
+                    <p class="subtitle">Measure your jump height from video</p>
                 </div>
 
-                <div class="input-section">
-                    <label class="input-label">Enter your height</label>
-                    <div class="unit-toggle">
-                        <button class="unit-btn active" data-unit="cm">cm</button>
-                        <button class="unit-btn" data-unit="imperial">ft/in</button>
+                <div class="features">
+                    <div class="feature">
+                        <span class="feature-icon">1</span>
+                        <span>Upload your jump video</span>
                     </div>
-
-                    <div id="height-input-cm" class="height-input-group">
-                        <div class="input-wrapper">
-                            <input type="number" id="height-cm" placeholder="175" min="100" max="250">
-                            <span class="input-suffix">cm</span>
-                        </div>
+                    <div class="feature">
+                        <span class="feature-icon">2</span>
+                        <span>Mark takeoff & peak frames</span>
                     </div>
-
-                    <div id="height-input-imperial" class="height-input-group hidden">
-                        <div class="input-wrapper">
-                            <input type="number" id="height-ft" placeholder="5" min="3" max="8">
-                            <span class="input-suffix">ft</span>
-                        </div>
-                        <div class="input-wrapper">
-                            <input type="number" id="height-in" placeholder="9" min="0" max="11">
-                            <span class="input-suffix">in</span>
-                        </div>
+                    <div class="feature">
+                        <span class="feature-icon">3</span>
+                        <span>Get your jump height</span>
                     </div>
                 </div>
 
-                <button id="btn-continue" class="btn btn-primary" disabled>Continue</button>
+                <button id="btn-start" class="btn btn-primary">Get Started</button>
             </div>
         </div>
 
-        <!-- Screen 2: Setup Instructions -->
-        <div id="screen-instructions" class="screen">
+        <!-- Screen 2: Upload -->
+        <div id="screen-upload" class="screen">
             <div class="screen-content">
-                <h2>Setup Instructions</h2>
+                <h2>Upload Your Video</h2>
+                <p class="screen-subtitle">Record yourself jumping from the side for best results</p>
 
-                <div class="instruction-diagram">
-                    <svg viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Phone -->
-                        <rect x="10" y="60" width="20" height="35" rx="2" stroke="currentColor" stroke-width="2"/>
-                        <circle cx="20" cy="70" r="3" fill="currentColor"/>
-                        <!-- Person (side view) -->
-                        <circle cx="140" cy="45" r="12" stroke="currentColor" stroke-width="2"/>
-                        <line x1="140" y1="57" x2="140" y2="95" stroke="currentColor" stroke-width="2"/>
-                        <line x1="140" y1="70" x2="125" y2="85" stroke="currentColor" stroke-width="2"/>
-                        <line x1="140" y1="70" x2="155" y2="85" stroke="currentColor" stroke-width="2"/>
-                        <line x1="140" y1="95" x2="130" y2="120" stroke="currentColor" stroke-width="2"/>
-                        <line x1="140" y1="95" x2="150" y2="120" stroke="currentColor" stroke-width="2"/>
-                        <!-- Ground -->
-                        <line x1="5" y1="125" x2="195" y2="125" stroke="currentColor" stroke-width="1" stroke-dasharray="4"/>
-                        <!-- Distance arrow -->
-                        <line x1="30" y1="135" x2="130" y2="135" stroke="currentColor" stroke-width="1"/>
-                        <polygon points="30,132 30,138 25,135" fill="currentColor"/>
-                        <polygon points="130,132 130,138 135,135" fill="currentColor"/>
-                        <text x="80" y="145" fill="currentColor" font-size="10" text-anchor="middle">6-10 ft</text>
-                    </svg>
-                </div>
-
-                <ul class="checklist">
-                    <li>
-                        <span class="check-icon">1</span>
-                        <span>Prop your phone up <strong>6-10 feet away</strong></span>
-                    </li>
-                    <li>
-                        <span class="check-icon">2</span>
-                        <span>Film from the <strong>side</strong> (perpendicular)</span>
-                    </li>
-                    <li>
-                        <span class="check-icon">3</span>
-                        <span>Ensure <strong>full body</strong> is visible in frame</span>
-                    </li>
-                    <li>
-                        <span class="check-icon">4</span>
-                        <span>Use <strong>good lighting</strong> and plain background</span>
-                    </li>
-                </ul>
-
-                <div class="action-buttons">
-                    <button id="btn-record" class="btn btn-primary">
-                        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="12" r="8"/>
-                        </svg>
-                        Record Video
-                    </button>
-                    <button id="btn-upload" class="btn btn-secondary">
-                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="17 8 12 3 7 8"/>
                             <line x1="12" y1="3" x2="12" y2="15"/>
                         </svg>
-                        Upload Video
-                    </button>
+                    </div>
+                    <p>Tap to select video</p>
+                    <span class="upload-hint">or drag and drop</span>
                 </div>
 
                 <input type="file" id="video-upload" accept="video/*" hidden>
-            </div>
-        </div>
 
-        <!-- Screen 3a: Recording -->
-        <div id="screen-recording" class="screen">
-            <div class="recording-container">
-                <video id="camera-preview" autoplay playsinline muted></video>
-
-                <div id="countdown-overlay" class="countdown-overlay hidden">
-                    <div class="countdown-number"></div>
-                </div>
-
-                <div id="recording-indicator" class="recording-indicator hidden">
-                    <span class="rec-dot"></span>
-                    <span class="rec-text">REC</span>
-                    <span id="rec-timer" class="rec-timer">0:00</span>
-                </div>
-
-                <div class="recording-instructions">
-                    <p id="recording-status">Preparing camera...</p>
-                </div>
-
-                <button id="btn-start-recording" class="btn btn-record hidden">
-                    <span class="record-circle"></span>
-                </button>
-
-                <button id="btn-cancel-recording" class="btn-back">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Screen 3b: Upload Preview -->
-        <div id="screen-upload" class="screen">
-            <div class="screen-content">
-                <h2>Review Video</h2>
-
-                <div class="video-preview-container">
-                    <video id="upload-preview" controls playsinline></video>
-                </div>
-
-                <p class="preview-hint">Make sure your full body and jump are visible</p>
-
-                <div class="action-buttons">
-                    <button id="btn-analyze-upload" class="btn btn-primary">Analyze Jump</button>
-                    <button id="btn-reselect" class="btn btn-secondary">Choose Different Video</button>
+                <div class="tips">
+                    <h4>Tips for best results:</h4>
+                    <ul>
+                        <li>Film from either side</li>
+                        <li>Keep camera steady</li>
+                        <li>Show feet clearly</li>
+                        <li>Use slow-motion if available</li>
+                    </ul>
                 </div>
             </div>
         </div>
 
-        <!-- Screen 4: Analyzing -->
-        <div id="screen-analyzing" class="screen">
-            <div class="screen-content centered">
-                <div class="loader">
-                    <div class="loader-ring"></div>
-                    <div class="loader-ring"></div>
-                    <div class="loader-ring"></div>
+        <!-- Screen 3: Frame Selector -->
+        <div id="screen-selector" class="screen">
+            <div class="selector-container">
+                <div class="video-wrapper">
+                    <video id="video-player" playsinline></video>
+                    <div id="frame-indicator" class="frame-indicator"></div>
                 </div>
-                <h2>Analyzing Your Jump</h2>
-                <p id="analysis-status" class="analysis-status">Loading AI model...</p>
+
+                <div class="selector-controls">
+                    <div class="time-display">
+                        <span id="current-time">0.000</span>s
+                    </div>
+
+                    <div class="scrubber-container">
+                        <input type="range" id="video-scrubber" min="0" max="1000" value="0" step="1">
+                        <div id="takeoff-marker" class="frame-marker takeoff hidden"></div>
+                        <div id="peak-marker" class="frame-marker peak hidden"></div>
+                    </div>
+
+                    <div class="frame-buttons">
+                        <button id="btn-prev-frame" class="btn-frame">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                            </svg>
+                        </button>
+                        <button id="btn-play-pause" class="btn-frame btn-play">
+                            <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5v14l11-7z"/>
+                            </svg>
+                            <svg class="icon-pause hidden" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                            </svg>
+                        </button>
+                        <button id="btn-next-frame" class="btn-frame">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="mark-buttons">
+                        <button id="btn-mark-takeoff" class="btn btn-mark takeoff">
+                            <span class="mark-dot"></span>
+                            Mark Takeoff
+                        </button>
+                        <button id="btn-mark-peak" class="btn btn-mark peak">
+                            <span class="mark-dot"></span>
+                            Mark Peak
+                        </button>
+                    </div>
+
+                    <div class="marked-times">
+                        <div class="marked-time" id="takeoff-time-display">
+                            <span class="mark-label">Takeoff:</span>
+                            <span class="mark-value" id="takeoff-time-value">Not set</span>
+                        </div>
+                        <div class="marked-time" id="peak-time-display">
+                            <span class="mark-label">Peak:</span>
+                            <span class="mark-value" id="peak-time-value">Not set</span>
+                        </div>
+                    </div>
+
+                    <div class="instruction-text" id="instruction-text">
+                        Scrub to the frame where your heels leave the ground, then tap "Mark Takeoff"
+                    </div>
+
+                    <button id="btn-calculate" class="btn btn-primary" disabled>Calculate Jump Height</button>
+                </div>
             </div>
         </div>
 
-        <!-- Screen 5: Results -->
+        <!-- Screen 4: Results -->
         <div id="screen-results" class="screen">
             <div class="screen-content centered">
                 <div class="result-card">
@@ -205,34 +167,20 @@
                     <p id="result-context" class="result-context">
                         That's about average for the general population.
                     </p>
+
+                    <div class="result-details">
+                        <div class="detail">
+                            <span class="detail-label">Air time to peak</span>
+                            <span class="detail-value" id="result-airtime">0.00s</span>
+                        </div>
+                    </div>
                 </div>
 
                 <button id="btn-try-again" class="btn btn-primary">Try Again</button>
             </div>
         </div>
-
-        <!-- Error Screen -->
-        <div id="screen-error" class="screen">
-            <div class="screen-content centered">
-                <div class="error-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                </div>
-                <h2>Oops!</h2>
-                <p id="error-message" class="error-message">Something went wrong. Please try again.</p>
-                <button id="btn-error-retry" class="btn btn-primary">Try Again</button>
-            </div>
-        </div>
     </div>
 
-    <!-- TensorFlow.js and MoveNet -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.0/dist/pose-detection.min.js"></script>
-
-    <script src="pose-analyzer.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
